@@ -1,13 +1,15 @@
 import mongoose from 'mongoose';
+import {insertBaseProducts} from '../utils.js'//Configuración Inicial
 
-//mongoose.connect('mongodb+srv://alastairblackwell:3lLd35UcActsfMLZ@cluster0.hprwu.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0');
-mongoose.connect('mongodb+srv://climon:psswrd24TECTOS@cluster0.nf6kn.mongodb.net/')
-
+// Configura cadena de conexión
+mongoose.connect(process.env.MONGODB_URI)
 const db = mongoose.connection;
 
+// Configura carga y conexión
 db.on('error', console.error.bind(console, 'connection error:'));
 db.once('open', () => {
     console.log('Connected to MongoDB');
+    insertBaseProducts()
 });
 
 export default db;

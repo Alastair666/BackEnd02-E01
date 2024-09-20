@@ -1,40 +1,55 @@
 import express from 'express';
-import session from 'express-session';
-import bodyParser from 'body-parser';
-import { engine } from 'express-handlebars';
-import MongoStore from 'connect-mongo';
+import { create } from 'express-handlebars';
+import passport from 'passport';
+import initializePassport from './config/passport.config.js'
+import cookieParser from 'cookie-parser';
+import viewsRouter from "./routes/views.route.js"
+import productsRouter from './routes/products.route.js'
+import cartsRouter from "./routes/carts.route.js"
+import usersRouter from "./routes/users.route.js"
+import sessionsRouter from "./routes/sessions.route.js"
+import __dirname, { ifEquals, inc } from "./utils.js"//Configuración Inicial
+import dotenv from 'dotenv'
 
+// Cargar variables de entorno desde el archivo .env
+dotenv.config({ path: './src/settings.env' });
+// Configurando Server
 const app = express();
+const PORT = process.env.PORT || 8080
+//console.log(`JWT_SECRET: ${process.env.JWT_SECRET} \nPORT: ${process.env.PORT} \nMONGODB_URI: ${process.env.MONGODB_URI}`)
 
-const PORT = 8080
-
-// Configuración de Handlebars para renderizar vistas
-app.engine('hbs', engine({
-    extname: '.hbs',
-    defaultLayout: 'main',
-}));
-app.set('view engine', 'hbs');
-app.set('views', './src/views');
-
-// Middleware
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
-
-app.use(session({
-    secret: 'secretkey',
-    resave: false,
-    saveUninitialized: true,
-    store: MongoStore.create({ mongoUrl: 'mongodb+srv://climon:psswrd24TECTOS@cluster0.nf6kn.mongodb.net/' }),
-    // cookie: { maxAge: 180 * 60 * 1000 },
-}));
-
-app.use(express.static('public'));
+// Configurando Middlewares para endpoints
 app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
+// Utilizar recursos estaticos
+app.use(express.static(__dirname + '/public'))
 app.use(cookieParser())
 initializePassport()
 app.use(passport.initialize())
-app.use(passport.session())
 
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+// Configurar Handlebars para lectura de contenido de los endpoints
+const hbs = create({
+    runtimeOptions: {
+        allowedProtoProperties: true,
+        allowProtoMethodsByDefault: true
+    },
+    helpers: {
+        ifEquals,
+        inc
+    }
 });
+app.engine('handlebars', hbs.engine)
+app.set('views', __dirname + '/views')
+app.set('view engine', 'handlebars')
+
+
+// Enlazando rutas para endpoints
+app.use("/", viewsRouter)
+app.use("/api/products", productsRouter)
+app.use("/api/carts", cartsRouter)
+app.use("/api/users", usersRouter)
+app.use("/api/sessions", sessionsRouter)
+
+app.listen(PORT, ()=>{
+    console.log(`Server running on port ${PORT}`)
+})

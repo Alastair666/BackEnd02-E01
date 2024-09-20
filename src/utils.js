@@ -1,36 +1,46 @@
-import bcrypt from 'bcrypt'
-import passport from 'passport'
+import { fileURLToPath } from "url"
+import { dirname } from "path"
+import path from "path"
+import fs from 'fs';
+import productsModel from "./models/product.model.js"
 
-// Hashear la contraseña
-export const createHash = password => bcrypt.hashSync(password, bcrypt.genSaltSync(10))
-
-// Validar la contraseña
-export const isValidPassword = (user, password) => bcrypt.compareSync(password, user.password)//*/
-
-// Autentica la petición
-export const passportCall = (strategy) => {
-    return async (req, res, next) => {
-        passport.authenticate(strategy, function (err, user, info) {
-            if (err) {
-                return next(err)
+/**  
+ * Función encargada de la carga inicial en productos en caso de no existir
+ * **/
+export async function insertBaseProducts() {
+    try {
+        // Validando si hay productos insertados
+        const productsBD = await productsModel.find()
+        if (productsBD.length === 0){
+            console.log("There's no products in database")
+            // Sino hay leyendo productos base de DATA
+            const filePath = path.resolve('src/data/products.json');
+            const data = fs.readFileSync(filePath, 'utf8');
+            const prodsBase = JSON.parse(data)
+            if (prodsBase){
+                const result = await productsModel.insertMany(prodsBase)
+                console.log("Products inserted in database")
             }
-            if (!user) {
-                return res.status(401).send({ error: info.messages ? info.messages : info.toString() })
-            }
-
-            req.user = user
-            next()
-        })
-
-            (req, res, next)
+            else
+                console.log("There's no products in JSON file")
+        }
+        else 
+            console.log(`There's ${productsBD.length} product(s) in database`)
     }
+    catch (error) {
+        console.error(error)
+    } 
+}
+// Helper de Handlebars
+export function ifEquals(arg1, arg2, options) {
+    return (arg1 === arg2) ? options.fn(this) : options.inverse(this);
+}
+// Incrementa 1 valor
+export function inc(value) {
+    return parseInt(value) + 1;
 }
 
-// Autoriza la solicitud
-export const authorization = (role) => {
-    return async (req, res, next) => {
-        if (!req.user) return res.status(401).send({ error: "Unauthorized" })
-        if (req.user.role !== role) return res.status(403).send({ error: "No permission" })
-        next()
-    }
-}
+// Exportando DIR para manejo de directorios y accesos
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+export default __dirname
