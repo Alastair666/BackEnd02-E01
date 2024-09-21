@@ -1,8 +1,10 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from 'passport-local';
 import userService from '../models/user.model.js'
+import cartService from '../models/cart.model.js'
 import jwt from "passport-jwt"
 import { createHash, isValidPassword } from '../middleware/auth.js'
+import productsModel from "../models/cart.model.js";
 
 // Cargar variables de entorno
 const JWTStrategy = jwt.Strategy
@@ -11,22 +13,31 @@ const ExtractJWT = jwt.ExtractJwt
 // Función que extrae a cookie del encabezado de la petición
 const cookieExtractor = (req)=>{
     let token = null
-    console.log(req.headers)
-    if (req && req.headers){
-        token = req.headers.authorization.split('')[1]
+    if (req && req.cookies){
+        let cookie = req.cookies
+        token = cookie.jwt
     }
     return token
 }//*/
 
 const initializePassport = ()=>{
     // Passport JWT
-    passport.use('jwt', new JWTStrategy({
+    const options = {
         jwtFromRequest:ExtractJWT.fromExtractors([cookieExtractor]),
         secretOrKey: process.env.JWT_SECRET
-    }, async(jwt_payload, done)=>{
+    }
+    passport.use('jwt', new JWTStrategy(options, async(jwt_payload, done)=>{
+        //console.log('Entro a passport JWT')
+        //console.log(jwt_payload)
         try {
-            return done(null, jwt_payload)
+            const user = await userService.findById(jwt_payload.user.id);
+            //console.log(user)
+            if (!user) {
+                return done(null, false, { message: 'User not found' });
+            }
+            return done(null, jwt_payload.user)
         } catch (error){
+            console.error(error)
             return done(error)
         }
     }))//*/
@@ -58,14 +69,17 @@ const initializePassport = ()=>{
                     else {
                         console.warn(`This email '${username}' is not in use`)
                     }
-                    //Creando registro
+
+                    //Creando registro de usuario
+                    const newUserCart = await cartService.create({ productsModel:[] })
                     const newUser = await userService.create({
                         first_name, 
                         last_name, 
                         email: username,
                         age, 
                         password: createHash(password),
-                        role
+                        role,
+                        cart: newUserCart._id
                     })
                     return done(null, newUser)
                 } else {
@@ -83,12 +97,11 @@ const initializePassport = ()=>{
         passwordField: 'password'
     }, async (username, password, done)=>{
         try {
-            console.log('El email: '+username+' logró acceder al login')
             //Consultando email en uso
             const user = await userService.findOne({ email: username })
             if (!user) return done(null, false, { message: `This email '${username}' doesn't exists!` })
             //Validando contraseña
-            if (isValidPassword(user, password)) return done(null, false, { message: `The password is incorrect.` })
+            if (!isValidPassword(user, password)) return done(null, false, { message: `The password is incorrect.` })
             //Devolviendo resultado obtenido
             return done(null, user)
         } catch (err) {

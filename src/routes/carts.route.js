@@ -1,6 +1,7 @@
 import express from "express"
 import { body, validationResult } from "express-validator"
 import cartsModel from '../models/cart.model.js'
+import userService from "../models/user.model.js"
 
 const router = express.Router()
 
@@ -11,12 +12,18 @@ router.get("/:uid", async(req,res)=>{
     try {
         const cart_uid = req.params.uid
         if (cart_uid){
-            const cart = await cartsModel.findOne({ user: cart_uid })
-            if (cart) {
-                res.status(200).json({ result: "success", payload: cart })
+            const userCart = await userService.findOne({ _id: cart_uid })
+            if (userCart){
+                const cart = await cartsModel.findOne({ _id: userCart.cart })
+                if (cart) {
+                    res.status(200).json({ result: "success", payload: cart })
+                }
+                else {
+                    res.status(400).json({ result: "error", errors: "There's no cart in the database" })
+                }
             }
             else {
-                res.status(400).json({ result: "error", errors: "There's no cart in the database" })
+                res.status(400).json({ result: "error", errors: "There's no user in the database" })
             }
         }
         else {

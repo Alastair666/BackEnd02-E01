@@ -107,7 +107,7 @@ if (botonesAgregar) {
             event.preventDefault()
             const cart = await getUserCart()
             if (!cart) {
-                alert(`There's no User-Cart`)
+                notificaMsj(`There's no User-Cart`, 'Error', 4)
             }
             else {
                 
@@ -162,7 +162,7 @@ if (botonesAgregar) {
                                 throw new Error(`HTTP error! status: ${response.status}`)
                         }
                         else
-                            alert(`The Quantity ${quantity} is invalid`)
+                            notificaMsj(`The Quantity ${quantity} is invalid`, 'Error', 4)
                     }
                 }
                 catch (error) {
@@ -186,5 +186,5 @@ document.getElementById("btnSeeCart").addEventListener("click", async(event)=>{
         location.href = `/carts/${cart._id}`
     }
     else
-        alert(`The User doesn't have a cart`)
+        notificaMsj(`The User doesn't have a cart`, 'Error', 4)
 })

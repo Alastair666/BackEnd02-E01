@@ -2,10 +2,6 @@ import mongoose from 'mongoose';
 
 // Definiendo Colección de Carritos
 const cartsSchema = mongoose.Schema({
-    user: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "users"
-    },
     products: {
         type:[
             {

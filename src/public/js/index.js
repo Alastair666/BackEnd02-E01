@@ -3,6 +3,32 @@ function homePage(){
     localStorage.clear()
 }
 homePage()
+//  Método que muestra la notificación
+function notificaMsj(texto, tipo, segundos){
+    let estilo = ""
+    switch (tipo){
+        case "Correcto":
+            estilo = "success"
+            break;
+        case "Alerta":
+            estilo = "warning"
+            break;
+        case "Error":
+            estilo = "danger"
+            break;
+        default:
+        case "Info":
+            estilo = "primary"
+            break;
+    }
+    //Mostrando notificación
+    Toastify({
+        text: texto,
+        duration: (parseInt(segundos) || 0) * 1000,
+        close: true,
+        style: { background: estilo }
+    }).showToast()
+}
 
 // Creando evento de Inicio de Sesión
 document.getElementById("btnSignIn").addEventListener("click", async (event)=>{
@@ -41,7 +67,7 @@ document.getElementById("btnSignUp").addEventListener("click", async (event)=>{
             <input id="txtFirstName" type="text" class="swal2-input" placeholder="First name">
             <input id="txtLastName" type="text" class="swal2-input" placeholder="Last name">
             <input id="txtEmail" type="text" class="swal2-input" placeholder="Email">
-            <input id="txtPsswrd" type="password" class="swal2-input" placeholder="Email">
+            <input id="txtPsswrd" type="password" class="swal2-input" placeholder="Password">
             <input id="txtAge" type="number" class="swal2-input" placeholder="Age">
         `,
         showCancelButton: true,
@@ -74,65 +100,74 @@ document.getElementById("btnSignUp").addEventListener("click", async (event)=>{
 
 async function authUser(loginArray) {
     try {
-        
+        const login = { email: loginArray[0], password: loginArray[1] }
         const response = await fetch(`/api/sessions/login`,{
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ email: loginArray[0], password: loginArray[1] })
+            body: JSON.stringify(login)
         })
         //Validando Respuesta
         const jsonRes = await response.json()
-        console.warn(jsonRes)
+        //console.warn(jsonRes)
         if (response.ok){
-            if (jsonRes.result === "success"){
+            if (jsonRes.status === "success"){
                 localStorage.removeItem("userEF")
-                localStorage.setItem("userEF", JSON.stringify(jsonRes.payload))
+                localStorage.setItem("userEF", JSON.stringify(jsonRes.user))
                 location.href = "/products"
             }
             else {
-                alert(`Sign In Errors: ${jsonRes.errors}`)
+                notificaMsj(`Sign In Errors: ${jsonRes.error}`, 'Error', 4)
             }
         }
         else {
             console.error(`Auth Method error:`, jsonRes)
-            alert(`The user ${email} was not found`)
+            notificaMsj(`The user ${login.email} was not found`, 'Error', 4)
         }
     }
     catch (error) {
         console.error(`There are problems with the registration method: `, error)
-        alert(`The user ${email} wasn't registered, see the console for more details`)
+        notificaMsj(`The user ${login.email} wasn't registered, see the console for more details`, 'Error', 4)
     }
 }
 
 async function registerUser(userArray) {
     try {
+        user = { 
+            first_name: userArray[0], 
+            last_name: userArray[1], 
+            email: userArray[2],
+            password: userArray[3],
+            age: userArray[4],
+            role: 'user'
+         }
         const response = await fetch(`/api/sessions/register`,{
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ firstName: userArray[0], lastName: userArray[1], email: userArray[2] })
+            body: JSON.stringify(user)
         })
+        const jsonRes = await response.json()
+        console.log(jsonRes)
         //Validando Respuesta
         if (response.ok){
-            const jsonRes = await response.json()
-            if (jsonRes.result === "success"){
+            if (jsonRes.status === "success"){
                 console.log(jsonRes)
-                alert(`The user ${userArray[2]} was registered`)
+                notificaMsj(`The user ${userArray[2]} was registered`, 'Error', 4)
             }
             else {
-                alert(`Register Errors: ${jsonRes.errors}`)
+                notificaMsj(`Register Errors: ${jsonRes.errors}`, 'Error', 4)
             }
         }
         else {
             console.error(`There are problems with the registration method: `, response.statusText)
-            alert(`The user ${userArray[2]} wasn't registered: ${response.statusText}`)
+            notificaMsj(`The user ${userArray[2]} wasn't registered: ${response.statusText}`, 'Error', 4)
         }
     }
     catch (error) {
         console.error(`There are problems with the registration method: `, error)
-        alert(`The user ${userArray[2]} wasn't registered, see the console for more details`)
+        notificaMsj(`The user ${userArray[2]} wasn't registered, see the console for more details`, 'Error', 4)
     }
 }   
