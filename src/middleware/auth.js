@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt'
 import passport from 'passport'
-import jwt from 'passport-jwt'
+import jwt from 'jsonwebtoken'
 
 /**
  * Funciones de encriptación para la contraseña

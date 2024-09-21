@@ -1,15 +1,21 @@
 import mongoose from 'mongoose';
 import {insertBaseProducts} from '../utils.js'//Configuración Inicial
+import dotenv from 'dotenv'
 
-// Configura cadena de conexión
-mongoose.connect(process.env.MONGODB_URI)
-const db = mongoose.connection;
+// Cargar variables de entorno desde el archivo .env
+dotenv.config({ path: './src/settings.env' });
 
-// Configura carga y conexión
-db.on('error', console.error.bind(console, 'connection error:'));
-db.once('open', () => {
-    console.log('Connected to MongoDB');
-    insertBaseProducts()
-});
+const connectDB = async () =>{
+    try {
+        // Configura cadena de conexión
+        await mongoose.connect(process.env.MONGODB_URI)
+        console.log('Connected to MongoDB');
+        insertBaseProducts()
+    }
+    catch (err) {
+        console.error('Connection Error:', error);
+        process.exit(1);
+    }
+}
 
-export default db;
+export default connectDB;

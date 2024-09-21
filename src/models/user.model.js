@@ -1,6 +1,6 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose'
 
-const userCollection = "Users";
+const userCollection = "Users"
 
 const userSchema = new mongoose.Schema({
     first_name: String,
@@ -15,6 +15,6 @@ const userSchema = new mongoose.Schema({
     role: { type: String, default: 'user' }
 });
 
-const firstCollection = mongoose.model(userCollection, userSchema);
+const userService = mongoose.model(userCollection, userSchema);
 
-export default firstCollection
+export default userService

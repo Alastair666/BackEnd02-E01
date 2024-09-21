@@ -5,43 +5,43 @@ import { authorization, passportCall, generateToken } from '../middleware/auth.j
 const router = Router();
 
 router.get('/echo', async (req,res)=>{
-    res.send({ status: "success", message: "Funciona" })
+    res.send({ status: "success", message: req.params })
 })
 
 // Registro de Usuario
-router.post('/register', 
-    passport.authenticate('register', { session: false }), 
-    async (req, res) => {
-        console.log("Entra aqui")
-    res.send({ status: "success", message: "Registered User!" })
-});
+router.post('/register', (req, res, next) =>{
+    passport.authenticate('register', { session: false }, (err, user, info)=>{
+        if (err) {
+            return res.status(500).json({ message: 'Internal Server Error' });
+        }
+        if (!user) {
+            return res.status(400).json({ message: info.message });
+        }
+        console.log(user)
+        res.send({ status: "success", user })
+    })(req, res, next)
+})
+
+
 router.get('/failregister', async (req, res) => {
     console.log('Estrategia fallida')
     res.send({ error: "Failed" })
 })
 
 // Inicio de Sesión de Usuario
-router.post('/login', 
-    passport.authenticate('login', { session: false, failureRedirect: '/faillogin' }), 
-    async (req, res) => {
-    // const { email, password } = req.body;
-    try {
-        if (!req.user) 
-            return res.status(400).send({ status: "error", error: "Credenciales invalidas" })
-
-        req.session.user = {
-            first_name: req.user.first_name,
-            last_name: req.user.last_name,
-            age: req.user.age,
-            email: req.user.email
+router.post('/login', (req, res, next) =>{
+    passport.authenticate('login', { session: false }, (err, user, info)=>{
+        if (err) return next(err);
+        if (!user) {
+            console.log(info.message);
+            return res.status(401).json({ message: info.message });
         }
-        const token = generateToken(req.session.user)
-        res.cookie("jwt", token, { httpOnly: true, secure: false });
-        res.send({ status: "success", payload: req.user })
-    }
-    catch (err) {
-        res.status(500).send({ status: "error", error: err})
-    }
+
+        const token = generateToken(user)
+        res.cookie("jwt", token, { httpOnly: true, secure: false });//*/
+        res.send({ status: "success", user })
+
+    })(req, res, next)
 })
 
 // Ruta de validación de autenticación

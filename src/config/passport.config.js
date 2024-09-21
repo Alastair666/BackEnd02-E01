@@ -1,11 +1,10 @@
 import passport from "passport";
-import local from 'passport-local';
+import { Strategy as LocalStrategy } from 'passport-local';
 import userService from '../models/user.model.js'
 import jwt from "passport-jwt"
 import { createHash, isValidPassword } from '../middleware/auth.js'
 
 // Cargar variables de entorno
-const LocalStrategy = local.Strategy
 const JWTStrategy = jwt.Strategy
 const ExtractJWT = jwt.ExtractJwt
 
@@ -17,55 +16,9 @@ const cookieExtractor = (req)=>{
         token = req.headers.authorization.split('')[1]
     }
     return token
-}
+}//*/
 
 const initializePassport = ()=>{
-    
-    // Register User
-    passport.use("register", new LocalStrategy({
-        passReqToCallback: true, usernameField: "email"}, async(req,username,password,done)=>{
-        const { first_name, last_name, age, role } = req.body
-        console.log("Entra aqui")
-        //Validando Campos Requeridos
-        let resultado = false, msj_error = ''
-        if (!first_name) msj_error += (!(msj_error.trim() === '') ? '' : '\n') + 'first_name is required'
-        if (!last_name) msj_error += (!(msj_error.trim() === '') ? '' : '\n') + 'last_name is required'
-        if (!age) msj_error += (!(msj_error.trim() === '') ? '' : '\n') + 'age is required'
-        if (!role) msj_error += (!(msj_error.trim() === '') ? '' : '\n') + 'role is required'
-        if (msj_error.trim() === '')
-            resultado = true
-
-        //Validando resultado obtenido
-        if (resultado) {
-            //Consultando email en uso
-            const user = await userService.findOne({ email: username })
-            if (!user) return done(null, false, { message: `This email '${username}' is already in use` })
-            //Creando registro
-            const newUser = await userService.create({
-                first_name, 
-                last_name, 
-                email: username,
-                age, 
-                password: createHash(password),
-                role
-            })
-            return done(null, newUser)
-        } else {
-            return done(null, false, { message: msj_error })
-        }
-    }))
-    // Log User
-    passport.use('login', new LocalStrategy({
-        usernameField: 'email'
-    }, async(username, password, done)=>{
-        //Consultando email en uso
-        const user = await userService.findOne({ email: username })
-        if (!user) return done(null, false, { message: `This email '${username}' doesn't exists!` })
-        //Validando contraseña
-        if (isValidPassword(user, password)) return done(null, false, { message: `The password is incorrect.` })
-        //Devolviendo resultado obtenido
-        return done(null, user)
-    }))
     // Passport JWT
     passport.use('jwt', new JWTStrategy({
         jwtFromRequest:ExtractJWT.fromExtractors([cookieExtractor]),
@@ -76,6 +29,74 @@ const initializePassport = ()=>{
         } catch (error){
             return done(error)
         }
+    }))//*/
+    // Register User
+    passport.use('register', new LocalStrategy({
+        passReqToCallback: true,
+        usernameField: 'email',
+        passwordField: 'password'
+    },  async(req,username,password,done)=>{
+            const { first_name, last_name, age, role } = req.body
+            try {
+                //Validando Campos Requeridos
+                let resultado = false, msj_error = ''
+                if (!first_name) msj_error += (!(msj_error.trim() === '') ? '\n' : '') + 'first_name is required'
+                if (!last_name) msj_error += (!(msj_error.trim() === '') ? '\n' : '') + 'last_name is required'
+                if (!age) msj_error += (!(msj_error.trim() === '') ? '\n' : '') + 'age is required'
+                if (!role) msj_error += (!(msj_error.trim() === '') ? '\n' : '') + 'role is required'
+                if (msj_error.trim() === '')
+                    resultado = true
+                //console.warn(msj_error)
+                //Validando resultado obtenido
+                if (resultado) {
+                    //Consultando email en uso
+                    const user = await userService.findOne({ email: username })
+                    //console.log(user)
+                    if (user) {
+                        return done(null, false, { message: `This email '${username}' is already in use` })
+                    }
+                    else {
+                        console.warn(`This email '${username}' is not in use`)
+                    }
+                    //Creando registro
+                    const newUser = await userService.create({
+                        first_name, 
+                        last_name, 
+                        email: username,
+                        age, 
+                        password: createHash(password),
+                        role
+                    })
+                    return done(null, newUser)
+                } else {
+                    return done(null, false, { message: msj_error })
+                }
+            }
+            catch (err) {
+                console.log(err)
+                return done(null, false, { message: err })
+            }
+    }))
+    // Log User
+    passport.use('login', new LocalStrategy({
+        usernameField: 'email',
+        passwordField: 'password'
+    }, async (username, password, done)=>{
+        try {
+            console.log('El email: '+username+' logró acceder al login')
+            //Consultando email en uso
+            const user = await userService.findOne({ email: username })
+            if (!user) return done(null, false, { message: `This email '${username}' doesn't exists!` })
+            //Validando contraseña
+            if (isValidPassword(user, password)) return done(null, false, { message: `The password is incorrect.` })
+            //Devolviendo resultado obtenido
+            return done(null, user)
+        } catch (err) {
+            console.error(err)
+            return done(err)
+        }
+
+        
     }))
     passport.serializeUser((user, done)=>{
         done(null, user._id)
