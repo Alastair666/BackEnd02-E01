@@ -4,7 +4,7 @@ async function getUserCartBD() {
     try {
         let user = await getUser()
         // Configurando Petición
-        const cart = await fetch(`/api/carts/${user._id}`,{
+        const cart = await fetch(`/api/carts/${user.id}`,{
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json'
@@ -43,7 +43,7 @@ async function createUserCartBD(){
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ user: user._id })
+            body: JSON.stringify({ user: user.id })
         })
         //Validando Respuesta
         const jsonCreate = await createCart.json()
@@ -174,9 +174,24 @@ if (botonesAgregar) {
 }
 
 // Creando evento de Inicio de Sesión
-document.getElementById("btnLogOut").addEventListener("click", (event)=>{
-    localStorage.clear()
-    location.href = '/'
+document.getElementById("btnLogOut").addEventListener("click", async (event)=>{
+    try {
+        const response = await fetch(`/api/sessions/logout`,{
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+    
+        if (response.ok){
+            localStorage.clear()
+            location.href = '/'
+        }
+    }
+    catch (err){
+        notificaMsj(`Error al salir: ${err}`, "Error", 4)
+        console.error(err)
+    }
 })
 
 // Creando evento de Visualización del Cart

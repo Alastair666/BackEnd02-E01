@@ -122,13 +122,13 @@ async function authUser(loginArray) {
             }
         }
         else {
-            console.error(`Auth Method error:`, jsonRes)
             notificaMsj(`The user ${login.email} was not found`, 'Error', 4)
+            console.error(`Auth Method error:`, jsonRes)
         }
     }
     catch (error) {
-        console.error(`There are problems with the registration method: `, error)
         notificaMsj(`The user ${login.email} wasn't registered, see the console for more details`, 'Error', 4)
+        console.error(`There are problems with the registration method: `, error)
     }
 }
 

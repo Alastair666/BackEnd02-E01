@@ -33,7 +33,13 @@ router.post('/login', (req, res, next) =>{
         const token = generateToken(user)
         res.cookie("jwt", token, { httpOnly: true, secure: false });//*/
         console.log(`Token en api/sessions/login: ${token}`)
-        res.send({ status: "success", user })
+        res.send({ status: "success", user: {
+            id: user._id,
+            first_name: user.first_name,
+            last_name: user.last_name,
+            email: user.email,
+            role: user.role
+        } })
 
     })(req, res, next)
 })
@@ -44,8 +50,28 @@ router.get('/faillogin', async (req, res) => {
 
 // Ruta de validación de autenticación
 router.get('/current', passportCall('jwt'), authorization('user'), (req, res) => {
-    res.send(req.user)
+    try {
+        if (req.user){
+            res.status(200)
+            .json({
+                status: "success",
+                user: req.user
+            })
+        }
+        else {
+            res.send({ error: 'No autorizado: '+req.error })
+        }
+    } catch (err) {
+        res.send({ error: err })
+    }
 })
+
+router.get('/logout', (req, res) => {
+    // Limpiar la cookie
+    res.clearCookie('jwt');
+    // Redirigir al inicio
+    res.redirect('/');
+});
 
 
 export default router;
